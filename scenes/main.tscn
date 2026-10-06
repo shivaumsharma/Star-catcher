@@ -101,6 +101,33 @@ custom_minimum_size = Vector2(320, 64)
 theme_override_font_sizes/font_size = 26
 text = "Analytics: On"
 
+[node name="ShareLogButton" type="Button" parent="UI/MenuPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 64)
+theme_override_font_sizes/font_size = 26
+text = "Share playtest log"
+
+[node name="ShareStatusLabel" type="Label" parent="UI/MenuPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.9, 1)
+theme_override_font_sizes/font_size = 22
+text = ""
+horizontal_alignment = 1
+
+[node name="MenuPlaytestNote" type="Label" parent="UI/MenuPanel/Center/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+text = "Playtest build: your taps and round results are logged on this phone."
+horizontal_alignment = 1
+
 [node name="GameOverPanel" type="Control" parent="UI"]
 unique_name_in_owner = true
 visible = false
@@ -224,6 +251,15 @@ custom_minimum_size = Vector2(440, 0)
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 26
 text = "We use Firebase Analytics to count sessions and see how rounds go (score, length). No account or personal details are collected. You can change this any time from the menu."
+horizontal_alignment = 1
+
+[node name="ConsentPlaytestNote" type="Label" parent="UI/ConsentPanel/Center/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.72, 0.78, 0.9, 1)
+theme_override_font_sizes/font_size = 22
+text = "Playtest build: whatever you choose above, this phone also keeps a private log of which buttons you tap and how each round goes. It stays on the phone unless you tap Share playtest log in the menu."
 horizontal_alignment = 1
 
 [node name="AllowButton" type="Button" parent="UI/ConsentPanel/Center/Box"]

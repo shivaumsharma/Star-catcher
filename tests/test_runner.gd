@@ -7,17 +7,30 @@ const Fake := preload("res://tests/fake_firebase.gd")
 const GameScript := preload("res://scripts/game.gd")
 const MainScene := preload("res://scenes/main.tscn")
 const TEST_SAVE := "user://test_save.cfg"
+const TEST_LOG := "user://test_playtest_log.jsonl"
+const TEST_META := "user://test_playtest_meta.cfg"
 
 var _checks := 0
 var _failures := 0
 var _real_save_path: String
+var _real_telemetry := {}
+var _clock := 1_000_000.0
 
 
 func _ready() -> void:
 	# Pessimistic default: a script error part-way through must not look like a pass.
 	get_tree().quit(1)
 	_real_save_path = Save.path
+	_real_telemetry = {"enabled": Telemetry.enabled, "path": Telemetry.path,
+		"meta_path": Telemetry.meta_path, "clock": Telemetry.clock}
+	if Telemetry.enabled:
+		print("(tip: run with `-- --no-telemetry` so tests don't add a line to your own playtest log)")
 	for test in [
+		_test_telemetry_writes_one_json_line_per_event,
+		_test_telemetry_install_id_persists_and_sessions_count,
+		_test_telemetry_rounds_are_numbered_per_install,
+		_test_telemetry_ignores_the_firebase_consent_choice,
+		_test_telemetry_can_be_switched_off,
 		_test_events_dropped_without_consent,
 		_test_events_queue_until_firebase_ready,
 		_test_consent_denied_drops_events_and_queue,
@@ -33,6 +46,10 @@ func _ready() -> void:
 		_test_frame_hitch_cannot_tunnel,
 		_test_spawner_and_restart,
 		_test_full_flow_reports_expected_events,
+		_test_full_flow_writes_the_funnel_to_the_local_log,
+		_test_declined_players_are_still_logged_locally,
+		_test_share_button_reports_how_many_lines_were_copied,
+		_test_backgrounding_marks_whether_a_round_was_open,
 	]:
 		print("- ", String(test.get_method()).trim_prefix("_test_").replace("_", " "))
 		_fresh_state()
@@ -64,12 +81,28 @@ func _fresh_state() -> void:
 	Analytics._firebase = null
 	Analytics.firebase_ready = false
 	Analytics._queue.clear()
+	# Telemetry: a private log, a deterministic clock (1 s per event), and one fresh launch.
+	for f in [TEST_LOG, TEST_META]:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
+	Telemetry.enabled = true
+	Telemetry.path = TEST_LOG
+	Telemetry.meta_path = TEST_META
+	Telemetry.clock = func() -> float:
+		_clock += 1.0
+		return _clock
+	Telemetry.start_session()
 
 
 func _cleanup() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE))
+	for f in [TEST_LOG, TEST_META]:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
 	Save.path = _real_save_path
 	Save.load_data()
+	Telemetry.enabled = _real_telemetry.enabled
+	Telemetry.path = _real_telemetry.path
+	Telemetry.meta_path = _real_telemetry.meta_path
+	Telemetry.clock = _real_telemetry.clock
 
 
 ## Attaches fakes to the Analytics autoload. Returns [core, analytics, shared call log].
@@ -88,6 +121,92 @@ func _new_game() -> Node2D:
 	game.start()
 	game._spawn_timer = INF  # no random spawns: tests place every item themselves
 	return game
+
+
+func _log_events() -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	for line in Telemetry.export_text().split("\n", false):
+		var parsed: Variant = JSON.parse_string(line)
+		if check(parsed is Dictionary, "every log line is a JSON object: %s" % line):
+			events.append(_whole_numbers_as_ints(parsed))
+	return events
+
+
+## JSON has one number type, so Godot parses a logged 1 back as 1.0. Undo that so values
+## compare equal to what the game logged.
+func _whole_numbers_as_ints(value: Variant) -> Variant:
+	if value is float and value == floorf(value):
+		return int(value)
+	if value is Dictionary:
+		var converted := {}
+		for key in value:
+			converted[key] = _whole_numbers_as_ints(value[key])
+		return converted
+	if value is Array:
+		return value.map(_whole_numbers_as_ints)
+	return value
+
+
+func _log_names() -> Array[String]:
+	var names: Array[String] = []
+	for e in _log_events():
+		names.append(e.e)
+	return names
+
+
+## Last logged event with this name (empty dict if none).
+func _last(event_name: String) -> Dictionary:
+	var found := {}
+	for e in _log_events():
+		if e.e == event_name:
+			found = e
+	return found
+
+
+# --- Local playtest log -------------------------------------------------------------------
+
+func _test_telemetry_writes_one_json_line_per_event() -> void:
+	Telemetry.event("x", {"n": 1, "f": 0.5, "s": "a"})
+	var events := _log_events()
+	eq(events.size(), 2, "app_open + x")
+	eq(events[0].e, "app_open", "a launch is logged first")
+	eq(events[0].p, {"first_launch": 1}, "the first launch is flagged")
+	eq(events[1].e, "x", "event name")
+	eq(events[1].p, {"n": 1, "f": 0.5, "s": "a"}, "params round-trip through JSON")
+	eq(events[1].i, Telemetry.install_id, "install id on every line")
+	check(str(events[1].i).length() == 8, "install id is 8 hex characters")
+	check(events[1].t > events[0].t, "timestamps come from the clock and increase")
+	eq(events[1].s, 1, "session number")
+
+
+func _test_telemetry_install_id_persists_and_sessions_count() -> void:
+	var first_id := Telemetry.install_id
+	Telemetry.start_session()
+	var launches := _log_events().filter(func(e): return e.e == "app_open")
+	eq(launches.size(), 2, "two launches logged")
+	eq(launches[1].i, first_id, "the install id survives a relaunch")
+	eq(launches[1].s, 2, "the session number counts launches")
+	eq(launches[1].p, {"first_launch": 0}, "only the very first launch is flagged")
+
+
+func _test_telemetry_rounds_are_numbered_per_install() -> void:
+	eq(Telemetry.next_round(), 1, "first round ever")
+	eq(Telemetry.next_round(), 2, "second round")
+	Telemetry.start_session()
+	eq(Telemetry.next_round(), 3, "numbering continues after a relaunch")
+
+
+func _test_telemetry_ignores_the_firebase_consent_choice() -> void:
+	Save.consent = Save.CONSENT_DENIED
+	Telemetry.event("tapped")
+	check(_log_names().has("tapped"), "logged although Firebase analytics was declined")
+
+
+func _test_telemetry_can_be_switched_off() -> void:
+	var before := Telemetry.event_count()
+	Telemetry.enabled = false
+	Telemetry.event("nope")
+	eq(Telemetry.event_count(), before, "a disabled logger writes nothing")
 
 
 # --- Analytics wrapper --------------------------------------------------------------------
@@ -423,4 +542,95 @@ func _test_full_flow_reports_expected_events() -> void:
 	Save.load_data()
 	eq([Save.best_score, Save.achievements, Save.consent],
 		[10, ["catcher_10"] as Array[String], Save.CONSENT_DENIED], "state survives a reload")
+	main.free()
+
+
+
+func _new_main_with_fake_firebase() -> Array:
+	var fb: Object = _attach()[1]
+	var main: Node = MainScene.instantiate()
+	add_child(main)
+	main.get_node("Game")._spawn_timer = INF
+	return [main, fb]
+
+
+func _test_full_flow_writes_the_funnel_to_the_local_log() -> void:
+	var main: Node = _new_main_with_fake_firebase()[0]
+	var game: Node2D = main.get_node("Game")
+	eq(_log_names(), ["app_open", "consent_shown"] as Array[String], "launch, then the consent screen is shown")
+
+	main.get_node("%AllowButton").pressed.emit()
+	eq(_last("consent_choice").p, {"granted": 1}, "the consent answer is logged")
+
+	main.get_node("%PlayButton").pressed.emit()
+	game._spawn_timer = INF
+	eq(_last("round_start").p, {"round_number": 1, "source": "menu", "best_score": 0}, "round start")
+
+	game.spawn_item(game.ItemKind.STAR, game.basket_x, game.BASKET_Y - 5.0)
+	game.step(0.016)
+	eq(_last("round_first_star").p.round_number, 1, "first star is attributed to round 1")
+	check(_last("round_first_star").p.seconds_in_round > 0.0, "and says how far into the round it came")
+
+	game.score = 9
+	game.spawn_item(game.ItemKind.STAR, game.basket_x, game.BASKET_Y - 5.0)
+	game.step(0.016)
+	eq(_last("unlock_milestone").p, {"id": "catcher_10", "round_number": 1}, "milestone is logged")
+
+	for i in 3:
+		game.spawn_item(game.ItemKind.STAR, 30.0, game.FIELD.y + game.ITEM_RADIUS)
+		game.step(0.016)
+	var lives_left: Array = _log_events().filter(func(e): return e.e == "life_lost").map(func(e): return e.p.lives_left)
+	eq(lives_left, [2, 1, 0], "each life lost is logged with lives left")
+	var end: Dictionary = _last("round_end").p
+	eq([end.round_number, end.score, end.stars_caught, end.stars_missed, end.bombs_hit, end.new_best],
+		[1, 10, 2, 3, 0, 1], "round_end summarises the round")
+
+	main.get_node("%PlayAgainButton").pressed.emit()
+	eq(_last("round_start").p, {"round_number": 2, "source": "game_over", "best_score": 10},
+		"the second round says it came from the game-over screen")
+	main.free()
+
+
+func _test_declined_players_are_still_logged_locally() -> void:
+	var parts := _new_main_with_fake_firebase()
+	var main: Node = parts[0]
+	var fb: Object = parts[1]
+	var game: Node2D = main.get_node("Game")
+	main.get_node("%DeclineButton").pressed.emit()
+	main.get_node("%PlayButton").pressed.emit()
+	game._spawn_timer = INF
+	for i in 3:
+		game.spawn_item(game.ItemKind.STAR, 30.0, game.FIELD.y + game.ITEM_RADIUS)
+		game.step(0.016)
+	eq(_last("consent_choice").p, {"granted": 0}, "the refusal itself is logged")
+	check(_log_names().has("round_end"), "rounds are logged for a player who declined")
+	eq(fb.events.size(), 0, "while Firebase receives nothing")
+	main.free()
+
+
+func _test_share_button_reports_how_many_lines_were_copied() -> void:
+	var main: Node = _new_main_with_fake_firebase()[0]
+	var before := Telemetry.event_count()
+	main.get_node("%ShareLogButton").pressed.emit()
+	var label: Label = main.get_node("%ShareStatusLabel")
+	check(label.visible, "a status line appears")
+	check(label.text.begins_with("Copied %d log lines" % before), "it states how many lines were copied (%s)" % label.text)
+	eq(_last("share_log").p, {"lines": before}, "the share is itself logged, after the copy")
+	if DisplayServer.has_feature(DisplayServer.FEATURE_CLIPBOARD):
+		eq(DisplayServer.clipboard_get().strip_edges().count("\n") + 1, before, "the clipboard holds the log")
+	else:
+		print("    (this display server has no clipboard; copy itself not checked here)")
+	main.free()
+
+
+func _test_backgrounding_marks_whether_a_round_was_open() -> void:
+	var main: Node = _new_main_with_fake_firebase()[0]
+	main.get_node("%AllowButton").pressed.emit()
+	main.notification(NOTIFICATION_APPLICATION_PAUSED)
+	eq(_last("app_background").p, {"in_round": 0}, "backgrounded from the menu")
+	main.notification(NOTIFICATION_APPLICATION_RESUMED)
+	check(_log_names().has("app_foreground"), "coming back is logged")
+	main.get_node("%PlayButton").pressed.emit()
+	main.notification(NOTIFICATION_APPLICATION_PAUSED)
+	eq(_last("app_background").p, {"in_round": 1}, "backgrounded mid-round")
 	main.free()

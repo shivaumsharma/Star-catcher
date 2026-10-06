@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 
 Save="*res://scripts/save.gd"
 Analytics="*res://scripts/analytics.gd"
+Telemetry="*res://scripts/telemetry.gd"
 
 [display]
 

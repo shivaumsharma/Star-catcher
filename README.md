@@ -23,7 +23,8 @@ Everything is drawn in code, so the project has no art or audio assets to manage
 
 ```sh
 godot --path star-catcher              # Godot 4.7; click or drag to move the basket, or use ← →
-godot --headless --path star-catcher res://tests/test_runner.tscn   # tests; exit code 1 on failure
+star-catcher/tests/run.sh              # Godot tests (needs `godot` on PATH, or pass its path); fails on any problem
+python3 -m unittest discover -s star-catcher/tools   # tests for the playtest report script
 ```
 
 On desktop there is no Firebase plugin, so analytics events are printed to the console instead
@@ -64,7 +65,7 @@ Only `scripts/analytics.gd` talks to it, so swapping plugins touches one file.
    - *Firebase → Enable Core*: on (default)
    - ***Firebase → Enable Analytics*: on — it is off by default, and without it nothing is sent**
    - *Firebase → Privacy Safe Defaults*: leave on (see below)
-   - *Resources → Filters to exclude*: `android/*,addons/godotx_firebase/*,build/*,tests/*`
+   - *Resources → Filters to exclude*: `android/*,addons/godotx_firebase/*,build/*,tests/*,tools/*`
 7. **Export / run on a device.** Use *One-click deploy*, or export an APK and `adb install` it.
 
 ### Checking that events arrive
@@ -102,16 +103,61 @@ Consent Mode signals denied. The game asks on first launch; *Allow* calls `set_c
 can be flipped from the menu (*Analytics: On/Off*). If you have no consent requirement you can switch
 the export option off and drop the prompt.
 
+## Playtest build: local log, share button, report
+
+This branch is meant for putting the game in front of friends and learning from it.
+
+- **`scripts/telemetry.gd`** appends one JSON line per event to a file on the phone: app launches,
+  the consent screen, button taps that start or end screens, and how each round goes. It runs
+  **whatever the player chose on the Firebase consent screen** — that is the only way to see what
+  people do on that screen — so the consent screen and the menu both say so, and you should tell
+  testers too. It never sends anything itself.
+- **Menu → *Share playtest log*** copies the whole log to the clipboard. The tester pastes it into a
+  message to you; save each friend's text as its own `.jsonl` file.
+- **`tools/playtest_report.py`** reads those files (or a folder of them) and prints the onboarding
+  funnel, session length, rounds per session and day-1/7/30 return rate:
+
+  ```sh
+  python3 tools/playtest_report.py friends_logs/
+  ```
+- **`sample_data/simulated_playtest.jsonl`** is a **simulation**: 30 bots (ids `sim-…`) playing the real
+  game. It exists to show what the report looks like; the report stamps it as sample data. Regenerate
+  with `godot --headless --path . res://tools/simulate_playtest.tscn -- --no-telemetry --out=$PWD/sample_data/simulated_playtest.jsonl`.
+  The assumptions behind it are the constants at the top of `tools/simulate_playtest.gd`.
+
+Logged events (`t` = unix seconds, `i` = random install id, `s` = launch number):
+
+| Event | Parameters |
+|---|---|
+| `app_open` | `first_launch` (1/0) |
+| `consent_shown`, `consent_choice` | `granted` (1/0) |
+| `menu_shown` | |
+| `round_start` | `round_number` (per install), `source` (`menu`/`game_over`), `best_score` |
+| `round_first_star` | `round_number`, `seconds_in_round` |
+| `life_lost` | `round_number`, `cause`, `score`, `lives_left`, `seconds_in_round` |
+| `unlock_milestone` | `id`, `round_number` |
+| `round_end` | `round_number`, `score`, `seconds_in_round`, `stars_caught`, `stars_missed`, `bombs_hit`, `new_best` |
+| `analytics_toggle` | `granted` |
+| `share_log` | `lines` |
+| `app_background`, `app_foreground` | `in_round` (1/0) on background |
+
+To keep your own desktop log clean, run the game or tests with `-- --no-telemetry`
+(`tests/run.sh` does). For a non-playtest build set `enabled = false` in `scripts/telemetry.gd`.
+Not verified on a phone: that the clipboard copy and app-background events behave on Android.
+
 ## Project layout
 
 ```
 scripts/analytics.gd   Firebase facade (autoload): init order, event queue, consent
 scripts/save.gd        best score, unlocked achievements, consent (autoload, ConfigFile)
+scripts/telemetry.gd   local playtest log (autoload)
 scripts/game.gd        gameplay simulation + drawing
 scripts/main.gd        screens, and where gameplay turns into analytics events
 scenes/main.tscn       the whole game
 theme.tres             button styling
-tests/                 headless suite + fake Firebase singletons
+tests/                 headless suite (run.sh) + fake Firebase singletons
+tools/                 playtest_report.py (+ its tests), simulate_playtest.gd
+sample_data/           simulated playtest log (not real players)
 ```
 
 How `analytics.gd` deals with the plugin: Firebase Core must be initialised before Analytics, and the
