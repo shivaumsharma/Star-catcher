@@ -2,7 +2,7 @@ extends Node
 ## Generates SAMPLE playtest logs: bots play the real game scene, so every line goes through
 ## the real logging code, but nothing here comes from a real person.
 ##
-##   godot --headless --path star-catcher res://tools/simulate_playtest.tscn -- \
+##   godot --headless --path . res://tools/simulate_playtest.tscn -- \
 ##       --no-telemetry --out=/absolute/path/simulated_playtest.jsonl
 ##
 ## Everything between the ASSUMPTIONS markers is invented to produce plausible variety. Any

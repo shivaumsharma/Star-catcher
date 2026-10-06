@@ -11,8 +11,8 @@ market. Everything below is about what the code shows and what a first playtest 
 
 | Label | Meaning |
 |---|---|
-| **[FROM CODE]** | Read directly from the source, with a file and line. Line numbers refer to commit `dc5a67a`, the version analysed (`git show dc5a67a:star-catcher/scripts/main.gd`). |
-| **[FROM CODE · SIMULATED]** | Measured by running the real game code with a simple bot (`star-catcher/tools/measure_baseline.gd`). A bot is not a person; these numbers bound what is possible, they do not describe players. |
+| **[FROM CODE]** | Read directly from the source, with a file and line. Line numbers refer to commit `982c2e5`, the version analysed (`git show 982c2e5:scripts/main.gd`). |
+| **[FROM CODE · SIMULATED]** | Measured by running the real game code with a simple bot (`tools/measure_baseline.gd`). A bot is not a person; these numbers bound what is possible, they do not describe players. |
 | **[FROM PLAYTEST]** | Data from real players. **There is none yet**, so this label appears only where the document says what a playtest should collect. |
 | **[HYPOTHESIS]** | A reasoned guess that needs testing. Nothing labelled this way should be quoted as fact. |
 
@@ -74,7 +74,7 @@ exists yet, and the Firebase and share-log paths have not run on a physical phon
 | Session length | No timer or cap; set by the player's skill and choice to replay. Floor: a non-moving player's round lasts 6–15 s. Ceiling: an instant-aim bot was still alive after 10 minutes. | `game.gd` has no round limit; bots in `tools/measure_baseline.gd`. **[FROM CODE · SIMULATED]** |
 | Win condition | **None.** There is no level or win state. "New best!" is the only success marker; three milestones (10/25/50 stars) exist but are invisible. | `main.gd:5`, `main.gd:76-80`, `main.gd:92-95`. **[FROM CODE]** |
 | Lose condition | Three lives, lost by missing a star or catching a bomb | `game.gd:20`, `124-126`, `165-172`. **[FROM CODE]** |
-| Tech stack | Godot 4.7, GDScript, GL Compatibility renderer; Firebase Analytics through the community [godot-x/firebase](https://github.com/godot-x/firebase) plugin; local JSON-lines playtest log; 240 Godot checks + 22 Python tests | `project.godot`, `star-catcher/scripts/`, `star-catcher/tests/`, `star-catcher/tools/`. **[FROM CODE]** |
+| Tech stack | Godot 4.7, GDScript, GL Compatibility renderer; Firebase Analytics through the community [godot-x/firebase](https://github.com/godot-x/firebase) plugin; local JSON-lines playtest log; 240 Godot checks + 22 Python tests | `project.godot`, `scripts/`, `tests/`, `tools/`. **[FROM CODE]** |
 
 The game has no "levels", so the brief's `first_level_win` has no equivalent here. This teardown uses
 **first star caught** as the first-reward moment and **reaching 10 stars** as the first milestone.
@@ -83,10 +83,10 @@ The game has no "levels", so the brief's `first_level_win` has no equivalent her
 
 | Consent | Menu | Playing | Game over |
 |---|---|---|---|
-| ![consent](star-catcher/screenshots/consent.png) | ![menu](star-catcher/screenshots/menu.png) | ![playing](star-catcher/screenshots/playing.png) | ![game over](star-catcher/screenshots/game-over.png) |
+| ![consent](screenshots/consent.png) | ![menu](screenshots/menu.png) | ![playing](screenshots/playing.png) | ![game over](screenshots/game-over.png) |
 
-*Baseline build (commit `dc5a67a`). The playtest build adds a disclosure note and a share button
-(`star-catcher/screenshots/playtest-consent.png`, `playtest-menu.png`).*
+*Baseline build (commit `982c2e5`). The playtest build adds a disclosure note and a share button
+(`screenshots/playtest-consent.png`, `playtest-menu.png`).*
 
 ### 2.3 Every step from first launch to first reward, in order
 
@@ -324,7 +324,7 @@ Text quoted from the baseline build.
 | 11 | After the round | "Play again" / "Menu" | **Clear** | |
 | 12 | **Coming back later** | *(nothing: no push, no email, no welcome-back)* | **Missing** | See D.4. |
 
-Playtest build additions (this branch): a 37-word note on the consent screen, a 12-word note on the menu, a
+Playtest build additions (from the second commit on): a 37-word note on the consent screen, a 12-word note on the menu, a
 "Share playtest log" button, and a status line ("Copied N log lines. Paste them into a message to the person who
 gave you this build."). They are there so the log never runs without the player knowing.
 
@@ -436,7 +436,7 @@ build a file came from.
 | Quotes worth keeping | |
 
 #### E.4 Metrics to track
-All computed by `star-catcher/tools/playtest_report.py` from the shared logs (§4).
+All computed by `tools/playtest_report.py` from the shared logs (§4).
 
 | Metric | Definition | Caution with 8–10 players |
 |---|---|---|
@@ -454,7 +454,7 @@ experiment in §5 has nothing to compare against.
 
 ## 4. Instrumentation notes and sample output
 
-### 4.1 What was added (branch `teardown-analytics`)
+### 4.1 What was added (commit `bc2a353`, plus tools in `915447e`)
 Instrumentation only — `game.gd`, `save.gd` and `analytics.gd` are byte-for-byte unchanged from the version
 analysed. No external services.
 
@@ -472,7 +472,7 @@ The game has no levels, so "levels completed per session" is reported as **round
 
 **One line of the log** (`t` = unix seconds, `i` = random install id, `s` = launch number, `e` = event, `p` = parameters):
 `{"e":"round_end","i":"sim-001","p":{"bombs_hit":3,"new_best":1,"round_number":1,"score":21,"seconds_in_round":23.63,"stars_caught":21,"stars_missed":0},"s":1,"t":1768151794.856}`
-Full event table: `star-catcher/README.md`.
+Full event table: `README.md`.
 
 **Design decisions to be ready to defend**
 - **Local logging ignores the consent choice.** It is the only way to measure the consent screen's drop-off, and
@@ -484,7 +484,7 @@ Full event table: `star-catcher/README.md`.
   are in the report's source and tests.
 
 ### 4.2 How it was checked
-- 240 automated checks in Godot 4.7 (`star-catcher/tests/run.sh`), including *declined players are still logged
+- 240 automated checks in Godot 4.7 (`tests/run.sh`), including *declined players are still logged
   locally*, the share button, and background/foreground events; 22 Python tests whose expected numbers were
   worked out by hand or taken from published values.
 - **Deliberate breakages:** dozens of one-line bugs were introduced on throwaway copies of the code (for example
@@ -496,7 +496,7 @@ Full event table: `star-catcher/README.md`.
 
 ### 4.3 Sample output — **SIMULATED PLAYERS, NOT REAL PEOPLE**
 
-Produced by `python3 star-catcher/tools/playtest_report.py star-catcher/sample_data/` on a log made by 30 bots
+Produced by `python3 tools/playtest_report.py sample_data/` on a log made by 30 bots
 (ids `sim-001` …) that played the real game scene. The report stamps this banner itself when it sees `sim-` ids.
 
 ```
@@ -692,7 +692,7 @@ B. FRIENDS-SIZED COMPARISON - 5 players who saw the old build vs 5 who saw the n
 *Nothing here describes this game. It shows the arithmetic a real A/B test of "starts a second round" would need.*
 Assumptions: a yes/no metric, two equal groups chosen at random, two-sided α = 0.05, power 80%. **The baselines
 below are assumed, not measured — the real baseline must be measured first.** Output of
-`python3 star-catcher/tools/sample_size.py`:
+`python3 tools/sample_size.py`:
 
 ```
 A. HYPOTHETICAL LAUNCH - players needed per group (two-sided alpha 0.05, power 80%)
@@ -738,18 +738,18 @@ Assigning players needs a tool such as Firebase Remote Config / A/B Testing, whi
 
 ```sh
 # Bot measurements quoted in §1, §2, Lens A, Lens B and §5 (about 15 seconds)
-godot --headless --path star-catcher res://tools/measure_baseline.tscn -- --no-telemetry
+godot --headless --path . res://tools/measure_baseline.tscn -- --no-telemetry
 
 # Sample log and report (§4.3)
-godot --headless --path star-catcher res://tools/simulate_playtest.tscn -- --no-telemetry --out=$PWD/star-catcher/sample_data/simulated_playtest.jsonl
-python3 star-catcher/tools/playtest_report.py star-catcher/sample_data/
+godot --headless --path . res://tools/simulate_playtest.tscn -- --no-telemetry --out=$PWD/sample_data/simulated_playtest.jsonl
+python3 tools/playtest_report.py sample_data/
 
 # Sample-size maths (§5.5, Appendix A)
-python3 star-catcher/tools/sample_size.py
+python3 tools/sample_size.py
 
 # All tests
-star-catcher/tests/run.sh
-python3 -m unittest discover -s star-catcher/tools
+tests/run.sh
+python3 -m unittest discover -s tools
 ```
-Line numbers in this document refer to commit `dc5a67a`; `main.gd` has more lines on this branch because of
+Line numbers in this document refer to commit `982c2e5` (the first commit); `scripts/main.gd` has more lines in later commits because of
 the added logging.

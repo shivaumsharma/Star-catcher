@@ -22,9 +22,9 @@ Everything is drawn in code, so the project has no art or audio assets to manage
 ## Run it on desktop
 
 ```sh
-godot --path star-catcher              # Godot 4.7; click or drag to move the basket, or use ← →
-star-catcher/tests/run.sh              # Godot tests (needs `godot` on PATH, or pass its path); fails on any problem
-python3 -m unittest discover -s star-catcher/tools   # tests for the playtest report script
+godot --path .              # Godot 4.7; click or drag to move the basket, or use ← →
+tests/run.sh              # Godot tests (needs `godot` on PATH, or pass its path); fails on any problem
+python3 -m unittest discover -s tools   # tests for the playtest report script
 ```
 
 On desktop there is no Firebase plugin, so analytics events are printed to the console instead
@@ -39,7 +39,7 @@ Only `scripts/analytics.gd` talks to it, so swapping plugins touches one file.
 1. **Create the Firebase app.** In the [Firebase console](https://console.firebase.google.com/)
    add an Android app. Pick a package name (e.g. `com.yourname.starcatcher`) — it must match the
    export preset's *Package → Unique Name* in step 6 exactly.
-2. **Download `google-services.json`** and put it in this folder (`star-catcher/`). It is git-ignored.
+2. **Download `google-services.json`** and put it in this folder (``). It is git-ignored.
 3. **Install the plugin.** Godot → *AssetLib* → search "Godotx Firebase" (or download the zip from the
    [releases](https://github.com/godot-x/firebase/releases)) and copy its `addons/` and `android/`
    folders into this project. Enable it in *Project → Project Settings → Plugins*.
@@ -105,9 +105,9 @@ the export option off and drop the prompt.
 
 ## Playtest build: local log, share button, report
 
-The product analysis that goes with this build is in [`TEARDOWN.md`](../TEARDOWN.md) at the repo root.
+The product analysis that goes with this build is in [`TEARDOWN.md`](TEARDOWN.md) at the repo root.
 
-This branch is meant for putting the game in front of friends and learning from it.
+The playtest build (second commit onward) is meant for putting the game in front of friends and learning from it.
 
 - **`scripts/telemetry.gd`** appends one JSON line per event to a file on the phone: app launches,
   the consent screen, button taps that start or end screens, and how each round goes. It runs

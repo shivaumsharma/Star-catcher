@@ -7,7 +7,7 @@ extends Node
 ## is a ceiling for how well anyone could play. Real players sit somewhere in between, and where is
 ## exactly what a playtest is for.
 ##
-##   godot --headless --path star-catcher res://tools/measure_baseline.tscn -- --no-telemetry
+##   godot --headless --path . res://tools/measure_baseline.tscn -- --no-telemetry
 const GameScript := preload("res://scripts/game.gd")
 
 const DT := 1.0 / 60.0
