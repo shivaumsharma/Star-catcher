@@ -105,6 +105,8 @@ the export option off and drop the prompt.
 
 ## Playtest build: local log, share button, report
 
+The product analysis that goes with this build is in [`TEARDOWN.md`](../TEARDOWN.md) at the repo root.
+
 This branch is meant for putting the game in front of friends and learning from it.
 
 - **`scripts/telemetry.gd`** appends one JSON line per event to a file on the phone: app launches,
@@ -156,7 +158,7 @@ scripts/main.gd        screens, and where gameplay turns into analytics events
 scenes/main.tscn       the whole game
 theme.tres             button styling
 tests/                 headless suite (run.sh) + fake Firebase singletons
-tools/                 playtest_report.py (+ its tests), simulate_playtest.gd
+tools/                 playtest_report.py, simulate_playtest.gd, measure_baseline.gd, sample_size.py (+ tests)
 sample_data/           simulated playtest log (not real players)
 ```
 
