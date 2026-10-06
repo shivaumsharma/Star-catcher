@@ -1,0 +1,241 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/game.gd" id="2_game"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+
+[node name="Game" type="Node2D" parent="."]
+script = ExtResource("2_game")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UI"]
+unique_name_in_owner = true
+visible = false
+mouse_filter = 2
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ScoreLabel" type="Label" parent="UI/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 280.0
+offset_bottom = 68.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 36
+text = "Score: 0"
+
+[node name="LivesLabel" type="Label" parent="UI/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -280.0
+offset_top = 18.0
+offset_right = -24.0
+offset_bottom = 68.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 36
+text = "Lives: 3"
+horizontal_alignment = 2
+
+[node name="MenuPanel" type="Control" parent="UI"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Center" type="CenterContainer" parent="UI/MenuPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="UI/MenuPanel/Center"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="UI/MenuPanel/Center/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(1, 0.827, 0.302, 1)
+theme_override_font_sizes/font_size = 72
+text = "Star Catcher"
+horizontal_alignment = 1
+
+[node name="MenuBestLabel" type="Label" parent="UI/MenuPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Best: 0"
+horizontal_alignment = 1
+
+[node name="PlayButton" type="Button" parent="UI/MenuPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 110)
+theme_override_font_sizes/font_size = 44
+text = "Play"
+
+[node name="AnalyticsToggle" type="Button" parent="UI/MenuPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 64)
+theme_override_font_sizes/font_size = 26
+text = "Analytics: On"
+
+[node name="GameOverPanel" type="Control" parent="UI"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="UI/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="UI/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="UI/GameOverPanel/Center"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="UI/GameOverPanel/Center/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(1, 0.827, 0.302, 1)
+theme_override_font_sizes/font_size = 64
+text = "Game Over"
+horizontal_alignment = 1
+
+[node name="OverScoreLabel" type="Label" parent="UI/GameOverPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Score: 0"
+horizontal_alignment = 1
+
+[node name="NewBestLabel" type="Label" parent="UI/GameOverPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+theme_override_colors/font_color = Color(1, 0.827, 0.302, 1)
+theme_override_font_sizes/font_size = 36
+text = "New best!"
+horizontal_alignment = 1
+
+[node name="OverBestLabel" type="Label" parent="UI/GameOverPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Best: 0"
+horizontal_alignment = 1
+
+[node name="PlayAgainButton" type="Button" parent="UI/GameOverPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 100)
+theme_override_font_sizes/font_size = 40
+text = "Play again"
+
+[node name="MenuButton" type="Button" parent="UI/GameOverPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 72)
+theme_override_font_sizes/font_size = 32
+text = "Menu"
+
+[node name="ConsentPanel" type="Control" parent="UI"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="UI/ConsentPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="Center" type="CenterContainer" parent="UI/ConsentPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="UI/ConsentPanel/Center"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="UI/ConsentPanel/Center/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(1, 0.827, 0.302, 1)
+theme_override_font_sizes/font_size = 44
+text = "Help improve Star Catcher?"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="UI/ConsentPanel/Center/Box"]
+layout_mode = 2
+custom_minimum_size = Vector2(440, 0)
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 26
+text = "We use Firebase Analytics to count sessions and see how rounds go (score, length). No account or personal details are collected. You can change this any time from the menu."
+horizontal_alignment = 1
+
+[node name="AllowButton" type="Button" parent="UI/ConsentPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 96)
+theme_override_font_sizes/font_size = 36
+text = "Allow analytics"
+
+[node name="DeclineButton" type="Button" parent="UI/ConsentPanel/Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 80)
+theme_override_font_sizes/font_size = 32
+text = "No thanks"

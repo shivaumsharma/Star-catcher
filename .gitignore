@@ -1,0 +1,23 @@
+# Godot
+.godot/
+*.translation
+export_presets.cfg
+build/
+
+# Firebase config is per-developer / per-app: download it from the Firebase console
+google-services.json
+GoogleService-Info.plist
+
+# Third-party plugin binaries and the generated Android build template —
+# install them as described in README.md
+addons/godotx_firebase/
+android/
+ios/
+
+# Signing
+*.keystore
+*.jks
+
+# Exports
+*.apk
+*.aab
